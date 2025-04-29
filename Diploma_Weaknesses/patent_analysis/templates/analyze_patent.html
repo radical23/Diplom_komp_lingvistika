@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Анализ Патента</title>
+</head>
+
+<body>
+    <h1>Введите ссылку на патент:</h1>
+    <form method="post" action="/analyze/">
+        {% csrf_token %}
+        <input type="text" name="url" placeholder="https://..." size="100">
+        <button type="submit">Анализировать</button>
+    </form>
+</body>
+
+</html>
+
+
+<!--Шаг 4: JS для кнопки "Анализировать" html Копировать Редактировать
+templates/analyze.html 
+<input type="text" id="url-input" placeholder="Вставьте ссылку на патент">
+<button id="analyze-btn">Анализировать</button>
+<div id="results"></div>
+
+<script>
+    document.getElementById("analyze-btn").addEventListener("click", async() => {
+        const url = document.getElementById("url-input").value;
+        const response = await fetch("/analyze/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                url
+            })
+        });
+        const data = await response.json();
+
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = "";
+
+        if (data.results) {
+            data.results.forEach(item => {
+                resultsDiv.innerHTML += `<p><strong>${item.патент}</strong>: ${item.предложение}</p>`;
+            });
+        } else {
+            resultsDiv.textContent = "Ошибка: " + (data.error || "Что-то пошло не так");
+        }
+    });
+
+    // csrf helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+                if (cookie.trim().startsWith(name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.trim().substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>-->

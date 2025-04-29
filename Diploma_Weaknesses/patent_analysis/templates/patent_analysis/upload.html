@@ -1,0 +1,29 @@
+<!-- patent_analysis/templates/patent_analysis/upload.html -->
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка патента</title>
+</head>
+
+<body>
+    <h1>Загрузка и анализ патента</h1>
+    <form method="post">
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit">Анализировать</button>
+    </form>
+
+    {% if result %}
+    <h2>Результат анализа:</h2>
+    <p>{{ result }}</p>
+    <form method="post" action="{% url 'save_analysis' %}">
+        {% csrf_token %}
+        <input type="hidden" name="result" value="{{ result }}">
+        <input type="hidden" name="source_url" value="{{ form.cleaned_data.patent_url }}">
+        <button type="submit">Сохранить в БД</button>
+    </form>
+    {% endif %}
+</body>
+
+</html>
