@@ -1,10 +1,9 @@
 from django.db import models
 
-# Create your models here.
 class AnalyzedPatent(models.Model):
-    patent_url = models.URLField()
-    result = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    patent = models.CharField(max_length=255, default='ПАТЕНТ_НЕ_УКАЗАН')
+    sentence = models.TextField(default='')
+    classification = models.CharField(max_length=100, default='Недостатки')
 
-    def __str__(self):
-        return self.patent_url
+    class Meta:
+        db_table = 'classified_weaknesses'  # Жёстко фиксируем имя таблицы
