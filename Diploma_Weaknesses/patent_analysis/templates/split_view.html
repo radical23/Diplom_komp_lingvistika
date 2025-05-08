@@ -91,6 +91,51 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
         }
+        /* Новые стили */
+        
+        .remove-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            float: right;
+        }
+        
+        .add-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f8ff;
+            border-radius: 5px;
+        }
+        
+        .add-controls select,
+        .add-controls textarea {
+            margin: 5px 0;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .current-patent {
+            background-color: #a5d6a7;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .highlight-keyword {
+            background-color: #f76262;
+            /* Красный оттенок для ключевых слов */
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -109,38 +154,51 @@
             <h2>Найденные недостатки</h2>
             <form id="weakness-form" method="post" action="{% url 'save_analysis' %}">
                 {% csrf_token %}
-                <input type="hidden" name="source_url" value="{{ original_url }}"> {% for item in weaknesses %}
-                <div class="weakness-item">
-                    <!-- Бейдж с вероятностью (только для отображения) -->
-                    <div class="probability-badge">
-                        Вероятность: {{ item.вероятность|default:"1.00" }}
-                    </div>
+                <input type="hidden" name="source_url" value="{{ original_url }}">
 
-                    <strong>Номер патента:</strong>
-                    <select name="patent_{{ forloop.counter }}" class="patent-select">
+                <!-- Контейнер для недостатков -->
+                <div id="weaknesses-container">
+                    {% for item in weaknesses %}
+                    <div class="weakness-item" data-index="{{ forloop.counter }}">
+                        <button type="button" class="remove-btn" onclick="removeWeakness(this)">✕</button>
+
+                        <div class="probability-badge">
+                            Вероятность: {{ item.вероятность|default:"1.00" }}
+                        </div>
+
+                        <strong>Номер патента:</strong>
+                        <select name="patent_{{ forloop.counter }}" class="patent-select">
+                            {% for patent in all_patents %}
+                            <option value="{{ patent }}" {% if patent == item.патент %}selected{% endif %}>
+                                {{ patent }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                        <strong>Описание недостатка:</strong>
+                        <textarea name="weakness_{{ forloop.counter }}">{{ item.предложение }}</textarea>
+
+                        <input type="hidden" name="probability_{{ forloop.counter }}" value="{{ item.вероятность|default:'1.00' }}">
+
+                        <label>
+                            <input type="checkbox" class="confirm-checkbox" name="confirm_{{ forloop.counter }}" checked>
+                            Подтвердить корректность
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Блок добавления новых недостатков -->
+                <div class="add-controls">
+                    <h3>Добавить недостаток</h3>
+                    <select id="new-patent">
                         {% for patent in all_patents %}
-                        <option value="{{ patent }}" 
-                                {% if patent == item.патент %}selected{% endif %}>
-                            {{ patent }}
-                        </option>
+                        <option value="{{ patent }}">{{ patent }}</option>
                         {% endfor %}
                     </select>
-
-                    <strong>Описание недостатка:</strong>
-                    <textarea name="weakness_{{ forloop.counter }}">{{ item.предложение }}</textarea>
-
-                    <!-- Скрытое поле для сохранения вероятности -->
-                    <input type="hidden" name="probability_{{ forloop.counter }}" value="{{ item.вероятность|default:'1.00' }}">
-
-                    <label>
-                        <input type="checkbox" 
-                               class="confirm-checkbox"
-                               name="confirm_{{ forloop.counter }}" 
-                               checked>
-                        Подтвердить корректность
-                    </label>
+                    <textarea id="new-sentence" placeholder="Введите описание недостатка"></textarea>
+                    <button type="button" onclick="addWeakness()">+ Добавить недостаток</button>
                 </div>
-                {% endfor %}
 
                 <button type="submit">Сохранить в базу данных</button>
             </form>
@@ -148,23 +206,159 @@
     </div>
 
     <script>
+        // Удаление недостатка
+        function removeWeakness(button) {
+            if (confirm('Удалить этот недостаток?')) {
+                button.closest('.weakness-item').remove();
+                reindexWeaknesses();
+            }
+        }
+
+        // Добавление нового недостатка
+        function addWeakness() {
+            const container = document.getElementById('weaknesses-container');
+            const patentSelect = document.getElementById('new-patent');
+            const sentenceTextarea = document.getElementById('new-sentence');
+
+            if (!sentenceTextarea.value.trim()) {
+                alert('Введите описание недостатка');
+                return;
+            }
+
+            const newIndex = container.children.length + 1;
+
+            container.insertAdjacentHTML('beforeend', `
+                <div class="weakness-item" data-index="${newIndex}">
+                    <button type="button" class="remove-btn" onclick="removeWeakness(this)">✕</button>
+                    
+                    <div class="probability-badge">
+                        Вероятность: 1.00
+                    </div>
+
+                    <strong>Номер патента:</strong>
+                    <select name="patent_${newIndex}" class="patent-select">
+                        ${patentSelect.innerHTML}
+                    </select>
+
+                    <strong>Описание недостатка:</strong>
+                    <textarea name="weakness_${newIndex}">${sentenceTextarea.value}</textarea>
+
+                    <input type="hidden" name="probability_${newIndex}" value="1.00">
+
+                    <label>
+                        <input type="checkbox" class="confirm-checkbox" name="confirm_${newIndex}" checked>
+                        Подтвердить корректность
+                    </label>
+                </div>
+            `);
+
+            // Очищаем поле ввода
+            sentenceTextarea.value = '';
+
+            // Обновляем индексы
+            reindexWeaknesses();
+        }
+
+        // Перенумерация индексов
+        function reindexWeaknesses() {
+            const container = document.getElementById('weaknesses-container');
+            Array.from(container.children).forEach((item, index) => {
+                const newIndex = index + 1;
+                item.setAttribute('data-index', newIndex);
+
+                // Обновляем имена полей
+                item.querySelector('select').name = `patent_${newIndex}`;
+                item.querySelector('textarea').name = `weakness_${newIndex}`;
+                item.querySelector('input[type="hidden"]').name = `probability_${newIndex}`;
+                item.querySelector('input[type="checkbox"]').name = `confirm_${newIndex}`;
+            });
+        }
+
+        // Функция для подсветки всех патентов
+        function highlightAllPatents() {
+            const textPanel = document.querySelector('.patent-text');
+            let text = textPanel.innerHTML;
+
+            // Получаем все уникальные номера патентов из combobox
+            const patentNumbers = Array.from(document.querySelectorAll('.patent-select option'))
+                .map(opt => opt.value)
+                .filter((value, index, self) => self.indexOf(value) === index);
+
+            // Подсвечиваем все патенты
+            patentNumbers.forEach(patent => {
+                const regex = new RegExp(patent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                text = text.replace(regex, `<span class="highlight">${patent}</span>`);
+            });
+
+            textPanel.innerHTML = text;
+        }
+
+        // Функция для выделения текущего выбранного патента
+        function highlightCurrentPatent(selectElement) {
+            // Сначала убираем предыдущее выделение
+            document.querySelectorAll('.current-patent').forEach(el => {
+                el.classList.remove('current-patent');
+                el.classList.add('highlight');
+            });
+
+            // Подсвечиваем новый выбранный патент
+            const patentNumber = selectElement.value;
+            const textPanel = document.querySelector('.patent-text');
+            let text = textPanel.innerHTML;
+
+            const regex = new RegExp(`<span class="highlight">${patentNumber}</span>`, 'g');
+            text = text.replace(regex, `<span class="current-patent">${patentNumber}</span>`);
+
+            textPanel.innerHTML = text;
+        }
+
         // Подсветка патентов при выборе
         document.querySelectorAll('.patent-select').forEach(select => {
             select.addEventListener('change', function() {
-                // Удаляем старую подсветку
                 document.querySelectorAll('.highlight').forEach(el => {
                     el.classList.remove('highlight');
                 });
 
-                // Подсвечиваем новый выбранный патент
                 const patentNumber = this.value;
                 const textPanel = document.querySelector('.patent-text');
-                const text = textPanel.innerHTML;
-                const highlighted = text.replace(
+                textPanel.innerHTML = textPanel.innerHTML.replace(
                     new RegExp(patentNumber, 'g'),
-                    `<span class="highlight" style="background-color: #fff3cd;">${patentNumber}</span>`
+                    `<span class="highlight">${patentNumber}</span>`
                 );
-                textPanel.innerHTML = highlighted;
+            });
+        });
+
+        const keywords = ['недостаток', 'недостатком', 'недостатки', 'недостатков', 'минусы', 'недостатками', 'проблема', 'проблемой'];
+
+
+        function highlightKeywords() {
+            const textPanel = document.querySelector('.patent-text');
+            let text = textPanel.innerHTML;
+
+            const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
+
+            text = text.replace(regex, '<span class="highlight-keyword">$1</span>');
+
+            textPanel.innerHTML = text;
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Подсвечиваем все патенты при загрузке
+            highlightAllPatents();
+            highlightKeywords();
+
+            // Подсвечиваем выбранный патент в первом combobox
+            const firstSelect = document.querySelector('.patent-select');
+            if (firstSelect) {
+                highlightCurrentPatent(firstSelect);
+            }
+
+            // Обработчики для combobox
+            document.querySelectorAll('.patent-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    highlightCurrentPatent(this);
+                });
             });
         });
     </script>
