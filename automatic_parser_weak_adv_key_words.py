@@ -12,7 +12,7 @@ client1 = clickhouse_connect.get_client(
 )
 
 # Подключение к SQLite
-sqlite_conn = sqlite3.connect('patents.db')
+sqlite_conn = sqlite3.connect('patents4.db')
 sqlite_cursor = sqlite_conn.cursor()
 
 # Создание таблиц, если их нет
@@ -31,9 +31,25 @@ advantages_keywords = ["эффективный", "улучшенный", "над
                        "технической задачей", "позволяет", "достигается", "улучшает", "повышает"]
 weaknesses_keywords = ["сложность", "дороговизна", "низкая эффективность", "ограничение", 'недостаток',
                        'недостатком', 'недостатки', 'недостатков', 'минусы', 'недостатками', 'проблема', 'проблемой','не обеспечивает','не обеспечивают']
-stop_words=["опубл"]
+stop_words = [
+    "опубл",
+    re.compile(r'\b\d{1,2}\.\d{1,2}\.\d{4}\b'),  # dd.mm.yyyy
+    re.compile(r'\b\d{4}-\d{1,2}-\d{1,2}\b'),    # yyyy-mm-dd
+    re.compile(r'\b\d{1,2}/\d{1,2}/\d{4}\b')     # mm/dd/yyyy
+]
 # Получение текстов патентов из ClickHouse
 patents = client1.query("SELECT description FROM patent_google WHERE inventorOrAuthor != 'Виталий Павлович Панкратов'").result_rows
+
+# Функция проверки на стоп-слова с учетом регулярных выражений
+def contains_stop_word(text):
+    text_lower = text.lower()
+    for item in stop_words:
+        if isinstance(item, re.Pattern):
+            if item.search(text):  # Проверка по регулярному выражению
+                return True
+        elif item in text_lower:  # Проверка обычных стоп-слов
+            return True
+    return False
 
 # Функция для разделения текста на предложения
 def split_text_into_sentences(text):
@@ -41,21 +57,19 @@ def split_text_into_sentences(text):
     return [sentence.strip() for sentence in sentences]
 
 for (text,) in patents:  # Распаковываем кортеж
-
     if text is None:
         continue
 
     sentences = split_text_into_sentences(text)
 
     for sentence in sentences:
-        
-        sentence_lower = sentence.lower()
-
-        if any(stop_word in sentence_lower for stop_word in stop_words):
+        if contains_stop_word(sentence):
             continue
 
-        found_advantages = [kw for kw in advantages_keywords if kw in sentence_lower and kw not in stop_words]
-        found_weaknesses = [kw for kw in weaknesses_keywords if kw in sentence_lower and kw not in stop_words]
+        sentence_lower = sentence.lower()
+
+        found_advantages = [kw for kw in advantages_keywords if kw in sentence_lower]
+        found_weaknesses = [kw for kw in weaknesses_keywords if kw in sentence_lower]
 
         if found_advantages:
             sqlite_cursor.execute("INSERT INTO advantages (text) VALUES (?)", (sentence,))

@@ -196,7 +196,7 @@ def save_weaknesses_to_postgres(results,conn):
 
 if __name__ == "__main__":
     #db_path = r"C:\Users\Admin\PycharmProjects\pythonProject23\Diplom_komp_lingvistika\patents.db"
-    db_path = r"C:\Users\Admin\PycharmProjects\pythonProject23\Diplom_komp_lingvistika\patents2.db"
+    db_path = r"C:\Users\Admin\PycharmProjects\pythonProject23\Diplom_komp_lingvistika\patents4.db"
     # Загрузка данных из обеих таблиц
     weakness_texts = load_data_from_db(db_path, "weaknesses")
     advantage_texts = load_data_from_db(db_path, "advantages")

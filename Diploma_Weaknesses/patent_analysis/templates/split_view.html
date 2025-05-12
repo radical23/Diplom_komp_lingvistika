@@ -102,6 +102,19 @@
             height: 25px;
             cursor: pointer;
             float: right;
+            position: relative;
+            display: flex;
+            /* Используем flexbox для выравнивания */
+            align-items: center;
+            /* Вертикальное выравнивание */
+            justify-content: center;
+            /* Горизонтальное выравнивание */
+            padding: 0;
+            /* Убираем стандартные отступы */
+            font-size: 14px;
+            /* Оптимальный размер для крестика */
+            line-height: 1;
+            /* Убираем лишний межстрочный интервал */
         }
         
         .add-controls {
@@ -335,11 +348,12 @@
             const textPanel = document.querySelector('.patent-text');
             let text = textPanel.innerHTML;
 
-            const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
+            const keywordRegex = new RegExp(`[^.?!]*(?:${keywords.join('|')})[^.?!]*[.?!]`, 'gi');
 
-            text = text.replace(regex, '<span class="highlight-keyword">$1</span>');
-
-            textPanel.innerHTML = text;
+            const highlightedText = text.replace(keywordRegex, match => {
+                return `<span class="highlight-keyword">${match.trim()}</span>`;
+            })
+            textPanel.innerHTML = highlightedText.replace(/\n/g, '<br>');
         }
 
         // Инициализация при загрузке страницы

@@ -14,6 +14,18 @@ def upload_form(request):
     """Отображает форму загрузки патента"""
     return render(request, 'analyze_patent.html') 
 
+def clean_description(text):
+    lines = text.splitlines()
+    clean_lines = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if line.lower() in ['description', 'translated from']:
+            continue
+        clean_lines.append(line)
+    return '\n'.join(clean_lines)
+
 def analyze_patent(request):
     """Основная функция анализа с двумя режимами: JSON и HTML"""
     if request.method == "POST":
@@ -37,7 +49,7 @@ def analyze_patent(request):
         # Возвращаем HTML для двухоконного интерфейса
         if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
             return render(request, 'split_view.html', {
-                'description': description,
+                'description': clean_description(description),
                 'weaknesses': weaknesses,
                 'all_patents': all_patents,
                 'original_url': url
@@ -74,3 +86,4 @@ def analyze_page(request):
 def save_results(request):
     """Алиас для save_analysis"""
     return save_analysis(request)
+
