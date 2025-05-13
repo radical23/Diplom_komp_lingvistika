@@ -44,13 +44,25 @@ def analyze_patent(request):
             return JsonResponse({"error": description}, status=500)
 
         cleaned_description = ' '.join(description.split())
-        weaknesses = classify_weakness_by_patent(cleaned_description, classifier, stop_phrases)
+        weaknesses_data = classify_weakness_by_patent(cleaned_description, classifier, stop_phrases)
 
+        # Подготовка данных для шаблона
+        weaknesses_with_prob = []
+
+        for item in weaknesses_data:
+            prob_match = re.search(r"вероятность: (\d+\.\d+)", item["классификация"])
+            probability = float(prob_match.group(1)) if prob_match else 0.0
+            weaknesses_with_prob.append({
+                'патент': item["патент"],
+                'предложение': item["предложение"],
+                'вероятность': probability
+            })
+        
         # Возвращаем HTML для двухоконного интерфейса
         if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
             return render(request, 'split_view.html', {
                 'description': clean_description(description),
-                'weaknesses': weaknesses,
+                'weaknesses_with_prob': weaknesses_with_prob,
                 'all_patents': all_patents,
                 'original_url': url
             })
@@ -58,7 +70,7 @@ def analyze_patent(request):
         # Или JSON для AJAX-запросов
         return JsonResponse({
             "description": description,
-            "weaknesses": weaknesses
+            "weaknesses": weaknesses_data
         })
 
     return render(request, 'analyze_patent.html')
@@ -68,10 +80,13 @@ def save_analysis(request):
         try:
             i = 1
             while f'patent_{i}' in request.POST:
+                probability = request.POST.get(f'probability_{i}')
+                classification_text = f"Недостатки (вероятность: {probability})"
                 AnalyzedPatent.objects.create(
                     patent=request.POST.get(f'patent_{i}'),  # Номер патента
                     sentence=request.POST.get(f'weakness_{i}'),  # Текст недостатка
-                    classification="Недостатки"  # Фиксированное значение
+                    #classification="Недостатки",
+                    classification=classification_text  # Фиксированное значение
                 )
                 i += 1
             return JsonResponse({"status": "success"})

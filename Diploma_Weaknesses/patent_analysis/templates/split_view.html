@@ -169,34 +169,33 @@
                 {% csrf_token %}
                 <input type="hidden" name="source_url" value="{{ original_url }}">
 
-                <!-- Контейнер для недостатков -->
+                <!-- В контейнере для недостатков замените: -->
                 <div id="weaknesses-container">
-                    {% for item in weaknesses %}
+                    {% for item in weaknesses_with_prob %}
                     <div class="weakness-item" data-index="{{ forloop.counter }}">
                         <button type="button" class="remove-btn" onclick="removeWeakness(this)">✕</button>
 
                         <div class="probability-badge">
-                            Вероятность: {{ item.вероятность|default:"1.00" }}
+                            Вероятность: {{ item.вероятность|floatformat:2 }}
                         </div>
 
                         <strong>Номер патента:</strong>
                         <select name="patent_{{ forloop.counter }}" class="patent-select">
-                            {% for patent in all_patents %}
-                            <option value="{{ patent }}" {% if patent == item.патент %}selected{% endif %}>
-                                {{ patent }}
-                            </option>
-                            {% endfor %}
-                        </select>
+            {% for patent in all_patents %}
+            <option value="{{ patent }}" {% if patent == item.патент %}selected{% endif %}>
+                {{ patent }}
+            </option>
+            {% endfor %}
+        </select>
 
                         <strong>Описание недостатка:</strong>
                         <textarea name="weakness_{{ forloop.counter }}">{{ item.предложение }}</textarea>
 
-                        <input type="hidden" name="probability_{{ forloop.counter }}" value="{{ item.вероятность|default:'1.00' }}">
-
+                        <input type="hidden" name="probability_{{ forloop.counter }}" value="{{ item.вероятность|floatformat:2 }}">
                         <label>
-                            <input type="checkbox" class="confirm-checkbox" name="confirm_{{ forloop.counter }}" checked>
-                            Подтвердить корректность
-                        </label>
+            <input type="checkbox" class="confirm-checkbox" name="confirm_{{ forloop.counter }}" checked>
+            Подтвердить корректность
+        </label>
                     </div>
                     {% endfor %}
                 </div>
