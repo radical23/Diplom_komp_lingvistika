@@ -6,4 +6,5 @@ urlpatterns = [
     path('analyze/', views.analyze_patent, name='analyze_patent'),
     path('save/', views.save_analysis, name='save_analysis'),  # Исправлено на save_analysis
     path("analyze-page/", analyze_page, name="analyze_page"),
+    path('', views.home_page,name='home_page')
 ]

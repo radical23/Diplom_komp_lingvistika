@@ -228,10 +228,10 @@ if __name__ == "__main__":
     # Обучение модели
     classifier = NaiveBayesClassifier.train(train_data)
 
-    # ---- ДОБАВЬ ВОТ ЭТИ СТРОКИ ----
-    import pickle
-    with open("classifier.pickle", "wb") as f:
-        pickle.dump(classifier, f)
+    
+    # import pickle
+    # with open("classifier.pickle", "wb") as f:
+    #     pickle.dump(classifier, f)
 # --------------------------------
 
     # Точность

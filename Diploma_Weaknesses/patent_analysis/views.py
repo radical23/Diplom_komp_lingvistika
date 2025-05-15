@@ -10,6 +10,10 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), 'classifier.pickle')
 with open(MODEL_PATH, 'rb') as model_file:
     classifier = pickle.load(model_file)
 
+def home_page(request):
+    """Отображает форму главной страницы"""
+    return render(request,'home_page.html')
+
 def upload_form(request):
     """Отображает форму загрузки патента"""
     return render(request, 'analyze_patent.html') 
