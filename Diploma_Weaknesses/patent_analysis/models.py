@@ -6,3 +6,6 @@ class AnalyzedPatent(models.Model):
     classification = models.CharField(max_length=100, default='Недостатки')
     class Meta:
         db_table = 'classified_weaknesses'  # Жёстко фиксируем имя таблицы
+
+    def __str__(self):
+        return f"{self.patent}: {self.sentence}"
